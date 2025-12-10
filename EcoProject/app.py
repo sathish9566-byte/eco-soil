@@ -2,13 +2,13 @@ import streamlit as st
 import pandas as pd
 
 # --- PART 1: PAGE SETUP ---
-st.set_page_config(page_title="Eco-Soil: Carbon & Soil Health ", page_icon="🌱", layout="wide")
+st.set_page_config(page_title="Eco-Soil: Carbon & Soil Health", page_icon="🌱", layout="wide")
 
 # Hide branding
 st.markdown("""<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}</style>""", unsafe_allow_html=True)
 
 st.title("🌱 Eco-Soil: Carbon Credit & Soil Health Calculator")
-st.markdown("**SATHISH'S  Assignment: Organic Farming (BAG1008)**")
+st.markdown("**SATHISH'S Assignment: Organic Farming (BAG1008)**")
 st.markdown("---")
 
 # --- PART 2: SIDEBAR (References) ---
@@ -33,7 +33,8 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("1. Farm & Soil Details")
     acres = st.number_input("Land Size (Acres):", value=5.0, step=0.5)
-    current_soc = st.slider("Current Soil Organic Carbon (%) (from Soil Health Card):", 0.0, 2.0, 0.40)
+    # UPDATED: Changed slider to number input for precision and no hard limit
+    current_soc = st.number_input("Current Soil Organic Carbon (%) (from Soil Health Card):", value=0.40, step=0.01, min_value=0.0, format="%.2f")
 
 with col2:
     st.subheader("2. Organic Inputs (Tons/Year)")
@@ -45,7 +46,7 @@ st.divider()
 
 # --- PART 4: THE MATH (Scientific Core) ---
 
-# 1. Carbon Sequestration Calculation (Strict Science)
+# 1. Carbon Sequestration Calculation
 # Factors: [Dry Matter, Carbon Content, Humification Rate]
 factors = {
     "FYM": [0.40, 0.35, 0.12],         # 12% retention
@@ -70,8 +71,7 @@ co2_equivalent = total_c_sequestered * 3.67
 earnings = co2_equivalent * 20 * 83 
 
 # 3. Soil Health Calculation (Agronomy Core)
-# Logic: 1 Acre of soil (top 15cm) weighs approx 2,000 Tons (2 million kg).
-# Percent Increase = (Added Carbon / Total Soil Weight) * 100
+# Logic: 1 Acre of soil (top 15cm) weighs approx 2,000 Tons.
 soil_weight_per_acre = 2000 # Tons
 total_soil_weight = soil_weight_per_acre * acres
 soc_increase = (total_c_sequestered / total_soil_weight) * 100
@@ -88,13 +88,23 @@ m3.metric("Est. Income", f"₹ {earnings:,.0f}")
 
 st.markdown("---")
 
-# SECTION B: SOIL HEALTH
+# SECTION B: THE GRAPH (Integrated back in)
+st.subheader("📉 Sequestration Breakdown by Source")
+chart_data = pd.DataFrame({
+    "Source": ["FYM", "Vermicompost", "Green Manure"],
+    "Stable Carbon Added (Tons)": [c_fym, c_vermi, c_green]
+})
+st.bar_chart(chart_data, x="Source", y="Stable Carbon Added (Tons)", color="#4CAF50")
+
+st.markdown("---")
+
+# SECTION C: SOIL HEALTH
 st.subheader("🧪 Soil Health Verification (TNAU Standards)")
 
 col_a, col_b = st.columns([1, 2])
 
 with col_a:
-    st.metric("Current SOC", f"{current_soc}%")
+    st.metric("Current SOC", f"{current_soc:.2f}%")
     st.metric("Projected SOC", f"{projected_soc:.4f}%", delta=f"+{soc_increase:.4f}%")
 
 with col_b:
@@ -106,7 +116,7 @@ with col_b:
     else:
         st.error(f"❌ **LOW STATUS:** Even with these inputs, your soil carbon is below 0.5%. You must increase FYM dosage.")
 
-    # Visual Bar Chart for Soil Health
+    # Visual Bar Chart for Soil Health (Capped at 1.0 for visual clarity)
     st.progress(min(projected_soc / 1.0, 1.0))
     st.caption("Target: 0.75% (TNAU Standard for Healthy Soil)")
 
